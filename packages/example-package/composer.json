@@ -1,0 +1,7 @@
+{
+    "name": "automattic/jetpack-example-package",
+    "description": "An example Jetpack package",
+    "type": "library",
+    "license": "GPL-2.0-or-later",
+    "require": {}
+}
