@@ -1,0 +1,7 @@
+{
+    "name": "automattic/jetpack-example-monorepo",
+    "description": "An example Jetpack monorepo",
+    "type": "project",
+    "license": "GPL-2.0-or-later",
+    "require": {}
+}
