@@ -28,7 +28,7 @@ if ( ! preg_match( '/^[A-Za-z0-9\-]+$/', $argv[1] ) ) {
 $package_name = $argv[1];
 
 // We need the tag name (version) to be able to mirror a package to its corresponding version.
-if ( empty( $argv[1] ) ) {
+if ( empty( $argv[2] ) ) {
 	die( 'Error: Tag name (version) has not been specified.' );
 }
 
