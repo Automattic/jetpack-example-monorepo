@@ -8,38 +8,43 @@
  *   - A Jetpack package in `/packages/example-package` in the main Jetpack repository
  *   - A repository that lives in `automattic/jetpack-example-package`.
  *
+ * This will:
+ * - Push a new release in the main repository, with a tag `automattic/jetpack-example-package@1.2.3`.
+ * - Push the latest contents and history of the package directory to the package repository.
+ * - Push a new release in the package repository, with a tag `v1.2.3`.
+ *
  * @package jetpack
  */
 
-// We need the package name to be able to mirror to a package.
+// We need the package name to be able to mirror its directory to a package.
 if ( empty( $argv[1] ) ) {
-	throw new Exception( 'Package name has not been specified.' );
+	die( 'Error: Package name has not been specified.' );
 }
 
 // Package name should contain only alphanumeric characters and dashes (example: `example-package`).
 if ( ! preg_match( '/^[A-Za-z0-9\-]+$/', $argv[1] ) ) {
-	throw new Exception( 'Package name is incorrect.' );
+	die( 'Error: Package name is incorrect.' );
 }
 $package_name = $argv[1];
 
-// We need the tag to be able to mirror a package to its corresponding version.
+// We need the tag name (version) to be able to mirror a package to its corresponding version.
 if ( empty( $argv[1] ) ) {
-	throw new Exception( 'Package name has not been specified.' );
+	die( 'Error: Tag name (version) has not been specified.' );
 }
 
-// Tag should match the format `1.0.10`.
+// Tag name (version) should match the format `1.2.3`.
 if ( ! preg_match( '/^[0-9.]+$/', $argv[2] ) ) {
-	throw new Exception( 'Package name is incorrect.' );
+	die( 'Error: Tag name (version) is incorrect.' );
 }
 $tag_version = $argv[2];
 
 // Create the new tag in the main repository.
 $main_repo_tag = 'automattic/jetpack-' . $package_name . '@' . $tag_version;
-$command = sprintf(
+$command       = sprintf(
 	'git tag -a %1$s -m "%1$s"',
 	escapeshellarg( $main_repo_tag )
 );
-execute( $command, 'Could not tag the new package version to the main repository.' );
+execute( $command, 'Could not tag the new package version in the main repository.' );
 
 // Push the new tag to the main repository.
 $command = sprintf(
@@ -56,13 +61,13 @@ $command = sprintf(
 execute( $command, 'Could not filter the branch to the package contents.' );
 
 // Add the corresponding package repository as a remote.
-$repo_url_with_credentials = sprintf(
+$package_repo_url = sprintf(
 	'https://github.com/Automattic/jetpack-%s.git',
 	$package_name
 );
-$command                   = sprintf(
+$command          = sprintf(
 	'git remote add package %s',
-	escapeshellarg( $repo_url_with_credentials )
+	escapeshellarg( $package_repo_url )
 );
 execute( $command, 'Could not add the new package repository remote.' );
 
@@ -77,20 +82,20 @@ $command = sprintf(
 	'git tag -a v%1$s -m "Version %1$s"',
 	escapeshellarg( $tag_version )
 );
-execute( $command, 'Could not tag the new version.' );
+execute( $command, 'Could not tag the new version in the package repository.' );
 
 // Push the new tag to the package repository.
 $command = sprintf(
 	'git push package v%s',
 	escapeshellarg( $tag_version )
 );
-execute( $command, 'Could not push the new version tag.' );
+execute( $command, 'Could not push the new version tag to the package repository.' );
 
 // Reset the main repository to the original state.
-execute( 'git reset --hard refs/original/refs/heads/master' );
+execute( 'git reset --hard refs/original/refs/heads/master', 'Could not reset the repository to its original state.' );
 
 // Remove the temporary repository package remote.
-execute( 'git remote rm package' );
+execute( 'git remote rm package', 'Could not clean up the package repository remote.' );
 
 /**
  * Execute a command.
