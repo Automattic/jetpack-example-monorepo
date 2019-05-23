@@ -1,11 +1,11 @@
 workflow "Release a package" {
-  on = "release"
   resolves = ["Send message to Slack"]
+  on = "release"
 }
 
 action "Run only for tags" {
   uses = "actions/bin/filter@master"
-  args = "tag"
+  args = "tag v*automattic/jetpack-"
 }
 
 action "Send message to Slack" {
