@@ -82,7 +82,7 @@ $command = sprintf(
 	'git push origin %s',
 	escapeshellarg( $main_repo_tag )
 );
-execute( $command, 'Could not push the new package version tag to the main repository.' );
+execute( $command, 'Could not push the new package version tag to the main repository.', true, true );
 
 // Push the new tag to the package repository.
 $command = sprintf(
