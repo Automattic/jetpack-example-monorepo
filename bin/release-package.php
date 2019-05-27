@@ -62,7 +62,7 @@ execute( $command, 'Could not filter the branch to the package contents.', true 
 
 // Add the corresponding package repository as a remote.
 $package_repo_url = sprintf(
-	'https://github.com/Automattic/jetpack-%s.git',
+	'git@github.com:Automattic/jetpack-%s.git',
 	$package_name
 );
 $command          = sprintf(
