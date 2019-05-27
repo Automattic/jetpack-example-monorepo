@@ -58,7 +58,7 @@ $command = sprintf(
 	'git filter-branch -f --prune-empty --subdirectory-filter %s master',
 	escapeshellarg( 'packages/' . $package_name )
 );
-execute( $command, 'Could not filter the branch to the package contents.' );
+execute( $command, 'Could not filter the branch to the package contents.', true );
 
 // Add the corresponding package repository as a remote.
 $package_repo_url = sprintf(
@@ -69,33 +69,30 @@ $command          = sprintf(
 	'git remote add package %s',
 	escapeshellarg( $package_repo_url )
 );
-execute( $command, 'Could not add the new package repository remote.' );
+execute( $command, 'Could not add the new package repository remote.', true, true );
 
 // Push the contents to the package repository.
-execute( 'git push package master --force', 'Could not push to the new package repository.' );
+execute( 'git push package master --force', 'Could not push to the new package repository.', true, true );
 
 // Grab all the existing tags from the package repository.
-execute( 'git fetch --tags', 'Could not fetch the existing tags of the package.' );
+execute( 'git fetch --tags', 'Could not fetch the existing tags of the package.', true, true );
 
 // Create the new tag.
 $command = sprintf(
 	'git tag -a v%1$s -m "Version %1$s"',
 	escapeshellarg( $tag_version )
 );
-execute( $command, 'Could not tag the new version in the package repository.' );
+execute( $command, 'Could not tag the new version in the package repository.', true, true );
 
 // Push the new tag to the package repository.
 $command = sprintf(
 	'git push package v%s',
 	escapeshellarg( $tag_version )
 );
-execute( $command, 'Could not push the new version tag to the package repository.' );
+execute( $command, 'Could not push the new version tag to the package repository.', true, true );
 
-// Reset the main repository to the original state.
-execute( 'git reset --hard refs/original/refs/heads/master', 'Could not reset the repository to its original state.' );
-
-// Remove the temporary repository package remote.
-execute( 'git remote rm package', 'Could not clean up the package repository remote.' );
+// Reset the main repository to the original state, and remove the package repository remote.
+cleanup( true, true );
 
 /**
  * Execute a command.
@@ -103,15 +100,38 @@ execute( 'git remote rm package', 'Could not clean up the package repository rem
  *
  * @throws Exception With the specified message if the command fails.
  *
- * @param string $command Command to execute.
- * @param string $error   Error message to be thrown if command fails.
+ * @param string $command           Command to execute.
+ * @param string $error             Error message to be thrown if command fails.
+ * @param bool   $cleanup_repo      Whether to cleaup repo on error.
+ * @param bool   $cleanup_remotes   Whether to cleanup remotes on error.
  */
-function execute( $command, $error = '' ) {
+function execute( $command, $error = '', $cleanup_repo = false, $cleanup_remotes = false ) {
 	// phpcs:disable WordPress.PHP.DiscouragedPHPFunctions.system_calls_passthru
 	passthru( $command, $status );
 	// phpcs:enable WordPress.PHP.DiscouragedPHPFunctions.system_calls_passthru
 
 	if ( $error && 0 !== $status ) {
+		cleanup( $cleanup_repo, $cleanup_remotes );
+
 		throw new Exception( $error );
+	}
+}
+
+/**
+ * Cleanup repository and remotes.
+ * Should be called at any error that changes the repo, or at success at the end.
+ *
+ * @param bool $cleanup_repo    Whether to cleaup repo on error.
+ * @param bool $cleanup_remotes Whether to cleanup remotes on error.
+ */
+function cleanup( $cleanup_repo = false, $cleanup_remotes = false ) {
+	if ( $cleanup_repo ) {
+		// Reset the main repository to the original state.
+		execute( 'git reset --hard refs/original/refs/heads/master', 'Could not reset the repository to its original state.' );
+	}
+
+	if ( $cleanup_remotes ) {
+		// Remove the temporary repository package remote.
+		execute( 'git remote rm package', 'Could not clean up the package repository remote.' );
 	}
 }
