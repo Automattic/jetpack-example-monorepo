@@ -129,6 +129,9 @@ function cleanup( $cleanup_repo = false, $cleanup_remotes = false ) {
 	if ( $cleanup_repo ) {
 		// Reset the main repository to the original state.
 		execute( 'git reset --hard refs/original/refs/heads/master', 'Could not reset the repository to its original state.' );
+
+		// Pull the latest master from the main repository
+		execute( 'git pull', 'Could not pull the latest master from the repository.' );
 	}
 
 	if ( $cleanup_remotes ) {
