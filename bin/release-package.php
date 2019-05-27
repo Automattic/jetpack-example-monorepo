@@ -46,13 +46,6 @@ $command       = sprintf(
 );
 execute( $command, 'Could not tag the new package version in the main repository.' );
 
-// Push the new tag to the main repository.
-$command = sprintf(
-	'git push origin %s',
-	escapeshellarg( $main_repo_tag )
-);
-execute( $command, 'Could not push the new package version tag to the main repository.' );
-
 // Do the magic: bring the subdirectory contents (and history of non-empty commits) onto the master branch.
 $command = sprintf(
 	'git filter-branch -f --prune-empty --subdirectory-filter %s master',
@@ -83,6 +76,13 @@ $command = sprintf(
 	escapeshellarg( $tag_version )
 );
 execute( $command, 'Could not tag the new version in the package repository.', true, true );
+
+// Push the new package tag to the main repository.
+$command = sprintf(
+	'git push origin %s',
+	escapeshellarg( $main_repo_tag )
+);
+execute( $command, 'Could not push the new package version tag to the main repository.' );
 
 // Push the new tag to the package repository.
 $command = sprintf(
