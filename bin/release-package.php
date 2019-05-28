@@ -27,9 +27,20 @@ if ( ! preg_match( '/^[A-Za-z0-9\-]+$/', $argv[1] ) ) {
 }
 $package_name = $argv[1];
 
+$package_info = get_package_info( $package_name );
+// just because
+display_package_info( $package_info );
+
+$current_version = get_current_version( $package_info );
+
+
+
 // We need the tag name (version) to be able to mirror a package to its corresponding version.
 if ( empty( $argv[2] ) ) {
-	die( 'Error: Tag name (version) has not been specified.' );
+	die( 'Error: Tag name (version) has not been specified. Please specify "major", "minor" or "patch" or a specific ' );
+}
+if ( in_array( strtolower ( $argv[2] ), array( 'major', 'minor', 'patch' ) )  {
+	$argv[2] = bump_version_number( $current_version, $argv[2] );
 }
 
 // Tag name (version) should match the format `1.2.3`.
@@ -38,6 +49,7 @@ if ( ! preg_match( '/^[0-9.]+$/', $argv[2] ) ) {
 }
 $tag_version = $argv[2];
 
+die( 'END!' );
 // Create the new tag in the main repository.
 $main_repo_tag = 'automattic/jetpack-' . $package_name . '@' . $tag_version;
 $command       = sprintf(
@@ -138,4 +150,74 @@ function cleanup( $cleanup_repo = false, $cleanup_remotes = false ) {
 		// Remove the temporary repository package remote.
 		execute( 'git remote rm package', 'Could not clean up the package repository remote.' );
 	}
+}
+
+
+ /**
+ * Semantically bump a version number, defaults to "minor".
+ *
+ * If your version number includes a prefix, (e.g. "v" in "v0.1.0")
+ * this will be preserved and returned.  Any suffix (e.g. "-beta"
+ * in "v0.5.2-beta") will be lost.
+ *
+ * You can provide version numbers in the following formats:
+ * '0.1.2', 'v1.2-patched', '2.3', '3', 4.1, 5
+ * And you will get back (assuming a minor bump):
+ * '0.2.2', 'v1.3.0', '2.4.0', '3.1.0', '4.2.0', '5.1.0'
+ *
+ * @param String|Null $version the current version number, defaults to '0.0.0'
+ * @param String|Null $type the type of bump (major|minor|patch), defaults to 'minor'
+ * @return String the new version number, e.g. '0.1.0'
+ */
+function bump_version_number( $version='0.0.0', $type='patch' ) {
+    $version = ''.$version;
+    $prefix = preg_replace('|[0-9].*$|', '', $version);
+    $version = preg_replace('|[^0-9.]*([0-9.]+).*|', '$1', $version);
+    while ( count(explode('.', $version)) < 3 ) {
+        $version .= '.0';
+    }
+    list($major, $minor, $patch) = explode('.', $version);
+    $major = (int) $major;
+    $minor = (int) $minor;
+    $patch = (int) $patch;
+    switch ($type) {
+        case 'major' : $major++; break;
+        case 'minor' : $minor++; break;
+        case 'patch' : $patch++; break;
+    }
+    return "$prefix$major.$minor.$patch";
+}
+
+function get_current_version( $package_info ) {
+	if ( isset( $package_info->version ) ) {
+		return $package_info->version;
+	}
+	die( 'PACKAGE ERROR: Package version is not defined!' . PHP_EOL );
+}
+function display_package_info( $package_info ) {
+	echo PHP_EOL;
+	foreach( (array) $package_info as $title => $key ) {
+		if ( is_string( $key ) ) {
+			echo( ucfirst ( $title ) . ': ' . $key . PHP_EOL );
+		}
+	}
+	echo PHP_EOL;
+}
+function get_package_info( $package ) {
+	$package = trim( $package );
+
+	$file = '';
+	if ( '-package' === substr( $package, - strlen( '-package' ) ) ) {
+		$file = dirname ( __FILE__ ) . '/../packages/' . $package . '/composer.json';
+	}
+
+	if ( empty( $file ) ) {
+		$file = dirname ( __FILE__ ) . '/../packages/' . $package . '-package/composer.json';
+	}
+
+	if ( ! file_exists ( $file ) ) {
+		die( 'PACKAGE: ' . $package . ' could not be found! - ' . $file . ' does not exits!' . PHP_EOL );
+	}
+
+	return json_decode( file_get_contents( $file, FILE_USE_INCLUDE_PATH ) );
 }
